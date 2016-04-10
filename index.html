@@ -17,54 +17,29 @@
   </head>
   <body ng-controller="oneOnOneController">
     
-    <script type="text/ng-template" id="myModalContent.html">
-        <div class="modal-header">
-            <h3 class="modal-title"></h3>
-            <h4></h4>
-        </div>
-        <div class="modal-body">
-            <iframe style="height: 400px; border: none; width:100%" ng-src="{{trustAsResourceUrl(iFrameUrl)}}"></iframe>  
-        </div>
-        <div class="modal-footer">
-            
-            <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
-        </div>
-    </script>
 
 
     <h1 align="center">Lineup Explorer</h1>
 
-    <div class="container-fluid" ng-hide="eligiblePlayersLoaded">
-      <h3 align="center">Loading players...</h3>
-    </div>
-    <div class="container-fluid" ng-show="eligiblePlayersLoaded">
+    <div class="container-fluid" >
       <div class="row">
         <div class="col-sm-3 col-sm-offset-3">
-          <label>Offensive Player:</label>
-          <ui-select ng-model="playerOne.selected" theme="bootstrap" reset-search-input="true">
-              <ui-select-match placeholder="Player 1 Name">{{$select.selected.DISPLAY_LAST_COMMA_FIRST}}</ui-select-match>
-              <ui-select-choices repeat="playerOne in searchResultPlayerObjects" refresh="refreshPlayers($select.search)" refresh-delay="0">
-                <div ng-bind-html="playerOne.DISPLAY_LAST_COMMA_FIRST | highlight: $select.search"></div>
+          <label>Team 1:</label>
+          <ui-select ng-model="teamOne.selected" theme="bootstrap" reset-search-input="true">
+              <ui-select-match placeholder="Team 1 Name">{{$select.selected.teamName}}</ui-select-match>
+              <ui-select-choices repeat="teamOne in searchTeams" refresh="refreshTeams($select.search)" refresh-delay="0">
+                <div ng-bind-html="teamOne.teamName | highlight: $select.search"></div>
               </ui-select-choices>
           </ui-select>
         </div>
         <div class="col-sm-3">
-          <label>Defensive Player:</label>
-          <ui-select ng-model="playerTwo.selected" theme="bootstrap" reset-search-input="true">
-              <ui-select-match placeholder="Player 2 Name">{{$select.selected.DISPLAY_LAST_COMMA_FIRST}}</ui-select-match>
-              <ui-select-choices repeat="playerTwo in searchResultPlayerObjects" refresh="refreshPlayers($select.search)" refresh-delay="0">
-                <div ng-bind-html="playerTwo.DISPLAY_LAST_COMMA_FIRST | highlight: $select.search"></div>
+          <label>Team 2:</label>
+           <ui-select ng-model="teamTwo.selected" theme="bootstrap" reset-search-input="true">
+              <ui-select-match placeholder="Team 2 Name">{{$select.selected.teamName}}</ui-select-match>
+              <ui-select-choices repeat="teamTwo in searchTeams" refresh="refreshTeams($select.search)" refresh-delay="0">
+                <div ng-bind-html="teamTwo.teamName | highlight: $select.search"></div>
               </ui-select-choices>
           </ui-select>
-        </div>
-      </div>
-      
-      <div class="row top-buffer">
-        <div class="col-sm-6 col-sm-offset-3" align="center">
-          <button type="button" class="btn btn-default" ng-click="switchMatchup()" ng-show="playerOne.selected && playerTwo.selected">Switch Matchup</button>
-          <button type="button" class="btn btn-disabled" ng-hide="playerOne.selected && playerTwo.selected">Switch Matchup</button>
-          <button type="button" class="btn btn-default" ng-click="getShareableLink()" ng-show="playerOne.selected && playerTwo.selected">Shareable Link</button>
-          <button type="button" class="btn btn-disabled" ng-hide="playerOne.selected && playerTwo.selected">Share Matchup</button>
         </div>
       </div>
     </div>
@@ -72,74 +47,21 @@
     <div class="container-fluid">
       <div class="row top-buffer">
         <div class="col-sm-3 col-sm-offset-3">
-          <div ng-repeat="(season,selected) in seasons">
-              <label align="right" class="custom-vertical visible-md-block visible-lg-block"><input type="checkbox" ng-model="seasons[season]"/> {{season}}</label>
-              <label align="center" class="visible-xs-block visible-sm-block"><input type="checkbox" ng-model="seasons[season]"/> {{season}}</label>
+          <div ng-repeat="season in seasons">
+              <label align="right" class="custom-vertical visible-md-block visible-lg-block"><input type="radio" ng-model="selectedSeason" value="{{season}}"/> {{season}}</label>
+              <label align="center" class="visible-xs-block visible-sm-block"><input type="radio" ng-model="selectedSeason" value="{{season}}"/> {{season}}</label>
           </div>
         </div>
         <div class="col-sm-3">
-          <div ng-repeat="(seasonType, selected) in seasonTypes">
-              <label class="custom-vertical visible-md-block visible-lg-block"><input type="checkbox" ng-model="seasonTypes[seasonType]"> {{seasonType}}</label>
-              <label align="center" class="visible-xs-block visible-sm-block"><input type="checkbox" ng-model="seasonTypes[seasonType]"> {{seasonType}}</label>
+          <div ng-repeat="seasonType in seasonTypes">
+              <label class="custom-vertical visible-md-block visible-lg-block"><input type="radio" ng-model="selectedSeasonType" value="{{seasonType}}"> {{seasonType}}</label>
+              <label align="center" class="visible-xs-block visible-sm-block"><input type="radio" ng-model="selectedSeasonType" value="{{seasonType}}"> {{seasonType}}</label>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="container" ng-show="eligiblePlayersLoaded">
-      <div class="row top-buffer">
-        <div class="col-sm-6 col-sm-offset-3">
-          <button type="button" class="btn btn-primary btn-block" ng-show="playerOne.selected && playerTwo.selected && verifySeasonSelected() && !shotsLoading && !shotsLoaded" ng-click="getShots()">Show shots</button>
-          <button type="button" class="btn btn-primary btn-block disabled" ng-show="playerOne.selected && playerTwo.selected && shotsLoading && !shotsLoaded">Loading shots</button>
-          <button type="button" class="btn btn-primary btn-block disabled" ng-hide="playerOne.selected && playerTwo.selected && verifySeasonSelected()">Show Shots</button>
-          <button type="button" class="btn btn-primary btn-block disabled" ng-show="playerOne.selected && playerTwo.selected && !shotsLoading && shotsLoaded">{{shotsVsDefender | numberMadeShots}} for {{shotsVsDefender.length}} ({{shotsVsDefender | percentageMadeShots}}%), {{defensiveFoulsForDefensivePlayer | totalNonShotPlays}} fouls drawn, {{offensiveFoulsForOffensivePlayer | totalNonShotPlays }} off</button>
-        </div>
-      </div>
-    </div>
-
-    <div ng-show="shotsLoaded" class="container-fluid">
-      <div class="row top-buffer" ng-hide="shotsVsDefender.length && !shotsLoading">
-        <h3 align="center">No shots found :/</h3>
-        <h5 align="center">Players at the same position work best</h5>
-      </div>
-
-      <div class="row top-buffer">
-        <div class="col-sm-6 col-sm-offset-3">
-          <accordion>
-            <accordion-group ng-repeat="gameID in gameIDsVsDefender track by $index">
-              <accordion-heading>
-                <button class="btn-default">+</button> {{gameIDMatchup[gameID]}}
-                <div class="visible-md-inline-block visible-lg-inline-block"><small>{{shotsVsDefenderGroupedByGame[gameID] | numberMadeShots}} for {{shotsVsDefenderGroupedByGame[gameID].length}} ({{shotsVsDefenderGroupedByGame.gameId | percentageMadeShots}}%), Fouls Drawn: {{defensiveFoulsForDefensivePlayer[gameID].length}}, Turnovers: {{stealsForDefensivePlayer[gameID].length + offensiveFoulsForOffensivePlayer.length}}</small></div>
-                <div class="visible-sm-inline-block">[{{shotsVsDefenderGroupedByGame[gameID] | numberMadeShots}}/{{shotsVsDefenderGroupedByGame[gameID].length}}] ({{shotsVsDefenderGroupedByGame[gameID] | percentageMadeShots}}%)</div>
-                <div class="visible-xs-inline-block">[{{shotsVsDefenderGroupedByGame[gameID] | numberMadeShots}}/{{shotsVsDefenderGroupedByGame[gameID].length}}]</div>
-
-              </accordion-heading>
-              <span ng-show="isErrorGame(matchup)">Due to inconsistencies in the NBA stat counting, some videos for this game may be incorrect. The vast majority of games do not have any inconsistencies.</span>
-               <div class="table-responsive">
-                  <table class="table">
-                    <tr>
-                      <td><b>Period</td>
-                      <td><b>Clock</td>
-                      <td><b>Value</td>
-                      <td><b>Dist(ft)</td>
-                      <td><b>Result</td>
-                    </tr>
-                    <tr ng-repeat="shot in shotsVsDefenderGroupedByGame[gameID]">
-                      <td>{{ shot.PERIOD }}</td>
-                      <td>{{ shot.GAME_CLOCK }}</td>
-                      <td>{{ shot.PTS_TYPE }}</td>
-                      <td>{{ shot.SHOT_DIST}}</td>
-                      <td>
-                        {{ shot.SHOT_RESULT }} | <a href="" ng-click="showVideo(shot)">VIDEO</a> 
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-            </accordion-group>    
-          </accordion>
-        </div>
-      </div>
-    </div>
+   
   
   </body>
     <footer align="center">
