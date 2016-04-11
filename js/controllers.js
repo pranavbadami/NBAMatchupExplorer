@@ -52,6 +52,20 @@ nbaLineupApp.service('formatAPIResults', function() {
     return formattingService;
 })
 
+nbaLineupApp.factory('teamData', function() {
+    var teamData = {};
+    teamData['teams'] = [{'lineups': [], 'roster': []},{'lineups': [], 'roster':[]}];
+
+    teamData.addTeamLineups = function(team_num, lineups) {
+        teamData.teams[team_num].lineups = lineups;
+    }
+    teamData.addTeamRoster = function(team_num, roster) {
+        teamData.teams[team_num].roster = roster;
+    }
+
+    return teamData;
+})
+
 nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
     
     var getterService = {
@@ -260,6 +274,24 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             return promise;
         },
 
+        getGameLogForPlayer: function(playerID, season, seasonType) {
+            var gameLogForPlayerUrl = "http://stats.nba.com/stats/playergamelog"
+            var requiredParams ={  
+                "PlayerID": playerID,
+                "LeagueID":"00",
+                "Season":season,
+                "SeasonType":seasonType,
+                "callback":"JSON_CALLBACK"
+            }
+            var promise = $http.jsonp(gameLogForPlayerUrl, { "params": requiredParams}).then(function(response) {
+                var headers = response.data.resultSets[0].headers;
+                var games = response.data.resultSets[0].rowSet;
+                var playerObjects = formatAPIResults.generateListOfObjects(headers, games);
+                return playerObjects;
+            });
+            return promise;
+        },
+
         getGamePlayByPlay: function(gameID) {
             var gamePlayByPlayUrl = "http://stats.nba.com/stats/playbyplayv2?EndPeriod=10" + 
             "&EndRange=55800&RangeType=2&Season=2014-15&SeasonType=Regular+Season" +
@@ -274,15 +306,12 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             })
             return promise;
         }
-
-
-
        
     };
     return getterService;
 });
 
-nbaLineupApp.controller('oneOnOneController', function ($scope, nbaAPI, $modal, $routeParams) {
+nbaLineupApp.controller('teamController', function ($scope, nbaAPI, $modal, $routeParams, teamData) {
     scope = $scope;
 
     // clear all outward facing variables
@@ -320,12 +349,12 @@ nbaLineupApp.controller('oneOnOneController', function ($scope, nbaAPI, $modal, 
             $scope.teamOneInit = false;
             $scope.searchTeams = $scope.teams;
             $scope.mostPlayedLineups(val.id, function(result) {
-                $scope.teamOneLineups = result.slice(0,3);
+                teamData.addTeamLineups(0, result.slice(0,3));
+                $scope.getRoster(val.id, function(result) {
+                    teamData.addTeamRoster(0, result);
+                    $scope.teamOneInit = true;
+                })
             })
-            $scope.getRoster(val.id, function(result) {
-                $scope.teamOneRoster = result;
-            })
-            $scope.teamOneInit = true;
         }
     })
 
@@ -334,12 +363,12 @@ nbaLineupApp.controller('oneOnOneController', function ($scope, nbaAPI, $modal, 
             $scope.teamTwoInit = false;
             $scope.searchTeams = $scope.teams;
             $scope.mostPlayedLineups(val.id, function(result) {
-                $scope.teamTwoLineups = result.slice(0,3);
+                teamData.addTeamLineups(1, result.slice(0,3));
+                $scope.getRoster(val.id, function(result) {
+                    teamData.addTeamRoster(1, result);
+                    $scope.teamTwoInit = true;
+                })
             })
-            $scope.getRoster(val.id, function(result) {
-                $scope.teamTwoRoster = result;
-            })
-            $scope.teamTwoInit = true;
         }
     })
 
@@ -355,5 +384,75 @@ nbaLineupApp.controller('oneOnOneController', function ($scope, nbaAPI, $modal, 
              callback(result);
         })
     };
+});
+
+nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $routeParams, teamData) {
+    scope_lineup = $scope;
+    $scope.teamData = teamData;
+    $scope.teamOneLineups = [];
+    $scope.teamTwoLineups = [];
+    $scope.selectedLineups = {};
+    $scope.allGames = [];
+    // depends on roster
+    var formatLineups = function(uf_lineups, roster) {
+        return _.map(uf_lineups, function(uf_lineup) {
+            return _.map(uf_lineup.GROUP_ID.split(" - "), function(playerID) {
+                return _.findWhere(roster, {"PLAYER_ID": parseInt(playerID)})
+            })
+        })
+    }
+
+    $scope.availableRoster = function(teamIndex, lineup) {
+        if (teamIndex == 0) {
+            return _.difference($scope.teamOneRoster, lineup);
+        }
+            
+        else {
+            return _.difference($scope.teamTwoRoster, lineup);
+        }
+    }
+
+    $scope.$watchCollection('teamData.teams[0].roster', function(newVal) {
+        $scope.teamOneRoster = newVal;
+        $scope.teamOneLineups = formatLineups($scope.teamData.teams[0].lineups,newVal)
+    })
+
+    $scope.$watchCollection('teamData.teams[1].roster', function(newVal) {
+        $scope.teamTwoRoster = newVal;
+        $scope.teamTwoLineups = formatLineups($scope.teamData.teams[1].lineups,newVal)
+    })
+
+    var getIDsFromGameLog = function(player, callback) {
+        var playerLogs = nbaAPI.getGameLogForPlayer(player.PLAYER_ID, $scope.selectedSeason, $scope.selectedSeasonType).then(function(result) {
+            var tempGameIDs = _.pluck(result, "Game_ID");
+            if ($scope.gameIDs.length == 0) {
+                $scope.gameIDs = tempGameIDs;
+                callback();
+                if (tempGameIDs.length == 0) return 
+            }
+            else{
+                $scope.gameIDs = _.intersection($scope.gameIDs, tempGameIDs);
+                callback()
+
+            }                 
+
+        })
+    }
+
+    var func = function() {
+        $scope.allGames = _.union($scope.allGames, $scope.gameIDs)
+    }
+    $scope.explore = function() {
+        var consolidateGames = _.after(10, func);
+        $scope.gameIDs = [];
+        $scope.matchupGames = [];
+        _.map($scope.selectedLineups.teamOne, function(player) {
+            getIDsFromGameLog(player, consolidateGames);
+        })
+        _.map($scope.selectedLineups.teamTwo, function(player) {
+            getIDsFromGameLog(player, consolidateGames);
+        }) 
+    }
+
 });
     

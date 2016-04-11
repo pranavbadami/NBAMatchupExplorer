@@ -15,7 +15,7 @@
     <script src="js/ui-bootstrap-tpls-0.13.4.min.js"></script>
     <script src="js/controllers.js"></script>
   </head>
-  <body ng-controller="oneOnOneController">
+  <body ng-controller="teamController">
     
 
 
@@ -23,7 +23,7 @@
 
     <div class="container-fluid" >
       <div class="row">
-        <div class="col-sm-3 col-sm-offset-3">
+        <div class="col-sm-5 col-sm-offset-1">
           <label>Team 1:</label>
           <ui-select ng-model="teamOne.selected" theme="bootstrap" reset-search-input="true">
               <ui-select-match placeholder="Team 1 Name">{{$select.selected.teamName}}</ui-select-match>
@@ -32,7 +32,7 @@
               </ui-select-choices>
           </ui-select>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-5">
           <label>Team 2:</label>
            <ui-select ng-model="teamTwo.selected" theme="bootstrap" reset-search-input="true">
               <ui-select-match placeholder="Team 2 Name">{{$select.selected.teamName}}</ui-select-match>
@@ -61,7 +61,71 @@
       </div>
     </div>
 
-   
+    <div class="container-fluid" ng-controller="lineupController">
+      <div class="row top-buffer">
+        <div class="col-sm-6">
+          <div class="panel panel-default">
+            <div class="panel-heading">Lineups</div>
+            <div class="panel-body">
+             Most Played
+             <div class="row" ng-repeat="lineup in teamOneLineups">
+              <div class="panel panel-default">
+                <label>
+                <input type="radio" ng-model="selectedLineups.teamOne" ng-value="lineup"/>
+                </label>
+                <div class="row">
+                  <div class="col-sm-4" ng-repeat="player in lineup track by $index">
+                  <ui-select ng-model="lineup[$index]" theme="bootstrap" reset-search-input="true">
+                    <ui-select-match placeholder="Player">{{$select.selected.PLAYER_NAME}}</ui-select-match>
+                    <ui-select-choices repeat="teamPlayer in availableRoster(0,lineup)" refresh="" refresh-delay="0">
+                      <div ng-bind-html="teamPlayer.PLAYER_NAME | highlight: $select.search"></div>
+                    </ui-select-choices>
+                  </ui-select>
+                </div>
+                </div>
+
+              </div>
+             </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="panel panel-default">
+            <div class="panel-heading">Lineups</div>
+            <div class="panel-body">
+             Most Played
+             <div class="row" ng-repeat="lineup in teamTwoLineups">
+              <div class="panel panel-default">
+                <label>
+                <input type="radio" ng-model="selectedLineups.teamTwo" ng-value="lineup"/>
+                </label>
+                <div class="row">
+                  <div class="col-sm-4" ng-repeat="player in lineup track by $index">
+                  <ui-select ng-model="lineup[$index]" theme="bootstrap" reset-search-input="true">
+                    <ui-select-match placeholder="Player">{{$select.selected.PLAYER_NAME}}</ui-select-match>
+                    <ui-select-choices repeat="teamPlayer in availableRoster(1,lineup)" refresh="" refresh-delay="0">
+                      <div ng-bind-html="teamPlayer.PLAYER_NAME | highlight: $select.search"></div>
+                    </ui-select-choices>
+                  </ui-select>
+                </div>
+                </div>
+
+              </div>
+             </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row top-buffer">
+        <div class="col-sm-4 col-sm-offset-4">
+           <button type="button" class="btn btn-default" ng-click="explore()" >Explore Lineup Data</button>
+        </div>
+      </div>
+
+    </div>
   
   </body>
     <footer align="center">
