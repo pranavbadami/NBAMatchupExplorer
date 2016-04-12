@@ -16,11 +16,7 @@
     <script src="js/controllers.js"></script>
   </head>
   <body ng-controller="teamController">
-    
-
-
     <h1 align="center">Lineup Explorer</h1>
-
     <div class="container-fluid" >
       <div class="row">
         <div class="col-sm-5 col-sm-offset-1">
@@ -124,7 +120,11 @@
            <button type="button" class="btn btn-default" ng-click="explore()" >Explore Lineup Data</button>
         </div>
       </div>
-
+      <!-- <div class="container-fluid" ng-repeat="gameID in allGames">
+        <div class="row" ng-repeat="play in getPlaysFromGame(gameID)">
+          Play
+        </div>
+      </div> -->
     </div>
   
   </body>
