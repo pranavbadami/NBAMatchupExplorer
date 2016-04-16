@@ -116,15 +116,19 @@
       </div>
 
       <div class="row top-buffer">
-        <div class="col-sm-4 col-sm-offset-4">
+        <div class="col-sm-12" align="center">
            <button type="button" class="btn btn-default" ng-click="explore()" >Explore Lineup Data</button>
         </div>
       </div>
-      <!-- <div class="container-fluid" ng-repeat="gameID in allGames">
-        <div class="row" ng-repeat="play in getPlaysFromGame(gameID)">
-          Play
+      <div class="row top-buffer">
+        <div class="col-sm-6 col-sm-offset-3">
+          
+      <div class="container-fluid" ng-repeat="gameID in gameIDs track by $index" ng-if="relevantPlays[gameID].length">
+        <div class="row" >
+          
+          {{boxScores[gameID].VISITOR_TEAM_ABBREV}} @ {{boxScores[gameID].HOME_TEAM_ABBREV}}, {{boxScores[gameID].DATE}}, {{relevantPlays[gameID] | timePlayed}} played
         </div>
-      </div> -->
+      </div>
     </div>
   
   </body>

@@ -11,6 +11,7 @@ var nbaLineupApp = angular.module('nbaLineupApp', ['ngSanitize', 'ui.select', 'u
 // Use underscore JS to return this as a list of objects
 // with the right key-value pairs.
 //
+months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 nbaLineupApp.service('formatAPIResults', function() {
     var formattingService = {
         generateListOfObjects: function(headers, list) {
@@ -46,8 +47,23 @@ nbaLineupApp.service('formatAPIResults', function() {
             var listQueryParamValues = _.map(filterTrueSettings, _.first);
             queryParams[paramName] = listQueryParamValues;
             return queryParams;
-        }
+        }, 
 
+        /**
+         * Return a timestamp with the format "m/d/yy "
+         * @type {Date}
+         */
+
+        timeStamp: function(date_string) {
+        // Create a date object with the current time
+          var d = new Date(date_string);
+
+        // Create an array with the current month, day and time
+          var date = [ d.getMonth(), d.getUTCDate(), d.getFullYear() ];
+
+        // Return the formatted string
+          return months[date[0]] + " " + date[1] + ", " + date[2];
+        }
     };
     return formattingService;
 })
@@ -242,6 +258,9 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             ])
             
         },
+        getTeam:function(teamID) {
+            return _.findWhere(getterService.getAllTeams(), {id: teamID});
+        },
 
         getLineups:function(teamID, season, seasonType) {
             var teamLineupsUrl = "http://stats.nba.com/stats/teamdashlineups"
@@ -362,7 +381,7 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             return promise;
         },
 
-        getGamePlayerStats: function(gameID) {
+        getBoxAndStats: function(gameID) {
             var gameBoxScoreUrl = "http://stats.nba.com/stats/boxscore"
             var requiredParams = {
                 "GameID":gameID,
@@ -375,11 +394,25 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             }
 
             var promise = $http.jsonp(gameBoxScoreUrl,{ "params": requiredParams}).then(function(response) {
-                var headers = response.data.resultSets[4].headers;
-                var boxscore = response.data.resultSets[4].rowSet;
-                var boxscoreObjects = formatAPIResults.generateListOfObjects(headers, boxscore);
+                console.log('response data', response);
+                var headers = response.data.resultSets[0].headers;
+                var boxscore = response.data.resultSets[0].rowSet;
+                var boxscoreObjects = _.map(formatAPIResults.generateListOfObjects(headers, boxscore), function(obj) {
+                    obj["DATE"] = formatAPIResults.timeStamp(obj.GAME_DATE_EST)
+                    var homeTeam = getterService.getTeam(obj.HOME_TEAM_ID);
+                    var awayTeam = getterService.getTeam(obj.VISITOR_TEAM_ID);
+                    obj["HOME_TEAM_NAME"] = homeTeam.teamName;
+                    obj["VISITOR_TEAM_NAME"] = awayTeam.teamName;
+                    obj["HOME_TEAM_ABBREV"] = homeTeam.abbrev;
+                    obj["VISITOR_TEAM_ABBREV"] = awayTeam.abbrev;
+                    return obj;
+                });
 
-                return boxscoreObjects;
+                headers = response.data.resultSets[4].headers;
+                var players = response.data.resultSets[4].rowSet;
+                var playerObjects = formatAPIResults.generateListOfObjects(headers, players);
+
+                return [boxscoreObjects, playerObjects];
             })
             return promise;
         }        
@@ -475,6 +508,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     $scope.allGames = [];
     $scope.gameState = [];
     $scope.playByPlays = {};
+    $scope.boxScores = {};
     // depends on roster
     var formatLineups = function(uf_lineups, roster) {
         return _.map(uf_lineups, function(uf_lineup) {
@@ -508,11 +542,11 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     $scope.$watch('gamesFound', function(newVal, oldVal) {
         if (newVal) {
             console.log('newVal', newVal);
-            $scope.relevantPlays = _.map($scope.gameIDs, function(gameID) {
+            $scope.relevantPlays = _.object(_.map($scope.gameIDs, function(gameID) {
                 var t = getPlaysFromGame(gameID);
                 // console.log('test', t);
                 return [gameID, t]
-            })
+            }));
         
         }
     })
@@ -547,6 +581,9 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     var func = function() {        
         getGameState(_.difference($scope.gameIDs, $scope.allGames))
         $scope.allGames = _.union($scope.allGames, $scope.gameIDs)
+        $scope.gameIDs = _.sortBy($scope.gameIDs, function(gameID) {
+            return parseInt(gameID);
+        })
     }
 
     $scope.explore = function() {
@@ -578,11 +615,12 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     var getGameState = function(games) {
         console.log('getting called')
         var playByPlay = [];
-        var boxscore = [];
         _.each(games, function(gameID) {
             console.log('gameID', gameID)
-            boxscore = nbaAPI.getGamePlayerStats(gameID).then(function(result) {
-                var players = result;
+            nbaAPI.getBoxAndStats(gameID).then(function(result) {
+                console.log('result in state', result);
+                $scope.boxScores[gameID] = result[0][0];
+                var players = result[1];
                 var teamOneState = gameStateMachine.getStarters(teamData.teams[0].id, players);
                 var teamTwoState = gameStateMachine.getStarters(teamData.teams[1].id, players);
 
@@ -601,4 +639,32 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
 
 
 });
+
+nbaLineupApp.filter('timePlayed', function() {
+    return function(plays) {
+        if (plays) {
+            if (plays.length) {
+                console.log('called');
+                var firstPlayTime = plays[0].PCTIMESTRING;
+                var lastPlayTime = _.last(plays).PCTIMESTRING;
+                var firstPlayMinute = parseInt(firstPlayTime.split(":")[0])
+                var firstPlaySeconds = parseInt(firstPlayTime.split(":")[1])
+                var lastPlayMinute = parseInt(lastPlayTime.split(":")[0])
+                var lastPlaySeconds = parseInt(lastPlayTime.split(":")[1])
+                if (firstPlaySeconds < lastPlaySeconds) {
+                    firstPlayMinute--;
+                    firstPlaySeconds+=60;
+                }
+                if (firstPlaySeconds-lastPlaySeconds < 10) {
+                    return (firstPlayMinute-lastPlayMinute).toString() + ":0" + (firstPlaySeconds-lastPlaySeconds).toString();
+            
+                }
+                return (firstPlayMinute-lastPlayMinute).toString() + ":" + (firstPlaySeconds-lastPlaySeconds).toString();
+            }
+            else return 0;
+        }
+        else return 0;
+    }
+})
+
     
