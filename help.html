@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.13.1/select.min.css">
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+    <script src="js/ui-bootstrap-tpls-0.13.4.min.js"></script>
+</head>
+<body>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-sm-10 col-sm-offset-1">
+				<h2>What is Matchup Explorer?</h2>
+				<a href="index.html"><-- Back</a>
+				<div class="row top-buffer">
+					<p>Matchup Explorer is an interactive tool that allows you to view detailed matchup  information and footage between two teams. It provides a game-by-game breakdown of matchups (i.e. lineups) across various criteria, including matchups that shared the floor for the longest time and the best matchups (by Plus/Minus) for either team. Further, it supports analysis by quarter and allows the user to request breakdowns of custom matchups. </p>
+				</div>
+				<h2>How do you use Matchup Explorer?</h2>
+				<div class="row">
+					<ul>
+						<li>First, select two teams that you're interested in viewing matchup details for. Then, select the season and season type (e.g. Regular Season, Playoffs) you want to consider. Click "View Matchup"!</li>
+						<li>After a brief loading phase (see the "<a href="#grr">Grr...</a>" section below), you will be presented with the games the two teams you selected played against each other in the given season and season type. Click on one of the games.</li>
+						<li>A panel will open under the game you clicked. That panel will have a navigation bar with the options "Most Played", "[Home Team] Best", "[Road Team] Best", and "Custom". When "Most Played" is selected, the 3 matchups that were on the floor for the longest in the selected game will be displayed. Click a matchup for a breakdown and footage (see next bullet). The "Best" options display the 3 matchups that were the best (by Plus/Minus) for either the Home or Away team. "Custom" allows you to create your own lineups from the players that played in that game and view a detailed breakdown with footage for these custom lineups. The dropdown menus on each of these navigational options allows you to view game totals or values by quarter.</li>
+						<li>
+						Once you click on a matchup, you will see another navigation bar with the options "Breakdown" and "Plays". "Breakdown" will give you statistical information about the selected matchup. "Plays" will list the plays that occurred while the two lineups shared the court and let you watch footage of those plays.
+						</li>
+						<li>
+						You can also click "Share Matchup" to copy a sharable link to your clipboard that allows another user to easily view the matchup you are interested in sharing.
+						</li>
+					</ul>
+				</div>
+				<h2>What is the purpose?</h2>
+				<div class="row">
+					Hopefully, fans and reporters can get some use out of this free tool. It can aid game analysis by highlighting key stretches in the game and the players involved in those stretches. The provided footage also provides fans and reporters without access to privileged (and organized) data an easy way to view the on-court dynamics of certain lineups. 
+				</div>
+
+				<h2>How does it work?</h2>
+				<div class="row">
+					The app uses the stats.nba.com API quite heavily. It first attains the games played between the selected teams within the chose parameters. For each of the games played, it computes the state at each play in the play-by-play of the game to determine the players that were on the court. Then, the app gathers all the plays in the game that had a given group of players on the court and does additional processing on the plays to provide statistical information and links to footage.
+				</div>
+
+				<h2 id="grr">Grr...</h2>
+				<div class="row">
+					Unfortunately, things are never as straightforward as you think they are. For example, one reason that the load times for the results are rather long is because the NBA doesn't record substitutions that occur in between quarters. I had to find a hacky way around this issue to make sure I had an accurate state at all times; otherwise, what would be the point? This hack added about 4x as many HTTP requests to the fetching and processing phase, causing the delay in load times.
+				</div>
+			</div>
+		</div>
+	</div>
+
+</body>
+<footer align="center">
+      <p></p>
+    <p>Posted by: Pranav Badami</p>
+    <p>Contact information: <a href="pranavbadami@gmail.com">
+    pranavbadami@gmail.com</a>.</p>
+</footer>
+</html>
