@@ -103,7 +103,17 @@
 
       <div class="row top-buffer" ng-show="loading">
         <div class="col-sm-8 col-sm-offset-2" style="text-align:center;">
-          <h4>Fetching + Processing (~ 5 - 10 seconds)</h4>
+          <div class="spinner">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+            <div class="bounce3"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row top-buffer" ng-show="loading">
+        <div class="col-sm-8 col-sm-offset-2" style="text-align:center;">
+          <h4>Fetching + Processing (~10 seconds)</h4>
         </div>
       </div>
       <div class="row top-buffer" ng-show="loaded">

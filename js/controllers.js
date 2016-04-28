@@ -586,7 +586,9 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             return promise;
         },
 
-        getBoxAndStats: function(gameID,startRange=0,endRange=55800) {
+        getBoxAndStats: function(gameID,startRange,endRange) {
+            if (typeof(startRange)==='undefined') startRange = 0;
+            if (typeof(endRange)==='undefined') endRange = 55800; 
             var gameBoxScoreUrl = "http://stats.nba.com/stats/boxscore"
             var requiredParams = {
                 "GameID":gameID,
@@ -650,6 +652,7 @@ nbaLineupApp.controller('teamController', function ($scope, $rootScope, nbaAPI, 
             }
             else result[item[0]] = decodeURIComponent(item[1]);
           });
+          $scope.parsedSharedUrl = true;
           $scope.selectedSeason = result.season;
           $scope.selectedSeasonType = result.seasonType;
           $scope.teamOne.selected = _.findWhere($scope.teams, {id: parseInt(result.teamOne)});
@@ -725,7 +728,7 @@ nbaLineupApp.controller('teamController', function ($scope, $rootScope, nbaAPI, 
             $scope.teamTwoInit = false;
             $scope.searchTeams = $scope.teams;
             teamData.addTeamId(1, val.id);
-            if ($scope.childReady)
+            if ($scope.childReady && $scope.parsedSharedUrl)
                 $rootScope.$broadcast('explore')
         }
     })
@@ -756,7 +759,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
    
     //top 3 most played matchups
     var processLineups = function(gameID) {
-        console.log('processing');
+        // console.log('processing');
         var totalPeriods = $scope.boxScores[gameID].LIVE_PERIOD;
         var periods = [];
         for (var i = 1; i < totalPeriods + 1; i++) { 
@@ -793,7 +796,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     
     $scope.$watchCollection('gameIDs', function(newVal) {
         if (newVal) {
-            console.log('newVal', newVal);
+            // console.log('newVal', newVal);
 
             getGameState(newVal);
         }
@@ -806,7 +809,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
         $scope.completedPeriods = 0;
         $scope.loaded = false;
         $scope.loading = true;
-        console.log('explore', teamData.teams[0].id, teamData.teams[0])
+        // console.log('explore', teamData.teams[0].id, teamData.teams[0])
         nbaAPI.getGamesForTeam(teamData.teams[0].id, $scope.selectedSeason, $scope.selectedSeasonType).then(function(result) {
             var teamOneGameIDs = _.pluck(result, "Game_ID");
             nbaAPI.getGamesForTeam(teamData.teams[1].id, $scope.selectedSeason, $scope.selectedSeasonType).then(function(result2) {
@@ -840,7 +843,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
 
     $scope.mostPlayedLineups = function(gameID, period) {
         $scope.selectedPeriod = period;
-        console.log('gameID, period', gameID, period);
+        // console.log('gameID, period', gameID, period);
         if (!$scope.processedGames) {
             _.each($scope.gameIDs, function(gameID) {
                     processLineups(gameID);
@@ -912,7 +915,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     $scope.getCustom = function(gameID) {
         $scope.displayCustom = {};
         var hash = getHashForLineup(_.union($scope.homeTeamCustom, $scope.visitorTeamCustom));
-        console.log('custom', gameID, hash);
+        // console.log('custom', gameID, hash);
         $scope.displayCustom = $scope.playByPlays[gameID].state[hash];
         $scope.hideCustomStats = false;
     }
@@ -961,7 +964,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
         var teamOneState = startState.teamOneState;
         var teamTwoState = startState.teamTwoState;
         nbaAPI.getGamePlayByPlay(gameID, $scope.selectedSeason, $scope.selectedSeasonType, period, period).then(function(result) {
-            console.log("result of new get", result, result.length);
+            // console.log("result of new get", result, result.length);
             
             _.each(result, function(play) {
                 //beginning of period
@@ -986,11 +989,11 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     }
 
     var getGameState = function(games) {
-        console.log('getting called')
+        // console.log('getting called')
         $scope.processedGames = false;
         _.each(games, function(gameID) {
             $scope.playByPlays[gameID] = {'state':{}, 'players': []};
-            console.log('gameID', gameID)
+            // console.log('gameID', gameID)
             nbaAPI.getBoxAndStats(gameID).then(function(result) {
                 var players = result[1];
                 $scope.boxScores[gameID] = result[0][0];
@@ -1003,7 +1006,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
                     periods[i] = i;
                 }
                 _.each(periods, function(period) {
-                    console.log("PERIOD", period);
+                    // console.log("PERIOD", period);
                     var startRange = (12*60*10)*period + 10;
                     var endRange = startRange + 250;
                     nbaAPI.getBoxAndStats(gameID, startRange, endRange).then(function(result) {
@@ -1012,7 +1015,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
                         var periodStartState = {'teamOneState': gameStateMachine.getStartState(teamData.teams[0].id, result[1]),
                                                'teamTwoState': gameStateMachine.getStartState(teamData.teams[1].id, result[1])
                                                 }
-                        console.log("result in getBox", result, gameID, startRange, endRange, periodStartState)
+                        // console.log("result in getBox", result, gameID, startRange, endRange, periodStartState)
                         getPlayByPlay(gameID, period+1, periodStartState, totalPeriods, players);
                     })
                 })
@@ -1042,7 +1045,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
     };
 
     $scope.$on('explore', function(event, args) {
-        console.log('explore now');
+        // console.log('explore now');
         $scope.explore();
     });
 
