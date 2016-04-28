@@ -125,7 +125,7 @@
                 
 
               <accordion-heading>
-                <span ng-click="getDisplayLineups(gameID)">{{boxScores[gameID].HOME_TEAM_ABBREV}} vs {{boxScores[gameID].VISITOR_TEAM_ABBREV}} ({{boxScores[gameID].HOME_TEAM_SCORE}} - {{boxScores[gameID].VISITOR_TEAM_SCORE}}), {{boxScores[gameID].DATE}}</span>
+                <span ng-click="getDisplayLineups(gameID)"> <span class="caret"></span> {{boxScores[gameID].HOME_TEAM_ABBREV}} vs {{boxScores[gameID].VISITOR_TEAM_ABBREV}} ({{boxScores[gameID].HOME_TEAM_SCORE}} - {{boxScores[gameID].VISITOR_TEAM_SCORE}}), {{boxScores[gameID].DATE}}</span>
               </accordion-heading>
 
                 <div class="navbar">
@@ -173,7 +173,7 @@
                     <h4 ng-show="!selectedPeriod">Totals</h4>
                     <h4 ng-show="selectedPeriod">Period {{selectedPeriod}}</h4>
                     <accordion>
-                      <accordion-group ng-repeat="pair in displayLineups track by $index" heading="{{$index + 1 }}) {{lineupHash[pair[0]][0][0].lastName}}, {{lineupHash[pair[0]][0][1].lastName}}, {{lineupHash[pair[0]][0][2].lastName}}, {{lineupHash[pair[0]][0][3].lastName}}, {{lineupHash[pair[0]][0][4].lastName}}
+                      <accordion-group ng-repeat="pair in displayLineups track by $index" heading=" {{$index + 1 }}) {{lineupHash[pair[0]][0][0].lastName}}, {{lineupHash[pair[0]][0][1].lastName}}, {{lineupHash[pair[0]][0][2].lastName}}, {{lineupHash[pair[0]][0][3].lastName}}, {{lineupHash[pair[0]][0][4].lastName}}
                               vs 
                               {{lineupHash[pair[0]][1][0].lastName}}, {{lineupHash[pair[0]][1][1].lastName}}, {{lineupHash[pair[0]][1][2].lastName}}, {{lineupHash[pair[0]][1][3].lastName}}, {{lineupHash[pair[0]][1][4].lastName}}">
                         <div id="lineupData">
