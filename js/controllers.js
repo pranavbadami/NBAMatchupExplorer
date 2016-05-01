@@ -613,8 +613,16 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
                     obj["VISITOR_TEAM_ABBREV"] = awayTeam.abbrev;
                     return obj;
                 });
-                boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][21]
-                boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][21]
+                console.log(boxscoreObjects, response.data.resultSets[1].rowSet[0], response.data.resultSets[1].rowSet[1]);
+                if (boxscoreObjects[0].HOME_TEAM_ID == response.data.resultSets[1].rowSet[0][3]) {
+                    boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][21]
+                    boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][21]
+                }
+                else {
+                    boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][21]
+                    boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][21]
+                }
+                
                 headers = response.data.resultSets[4].headers;
                 var players = response.data.resultSets[4].rowSet;
                 var playerObjects = formatAPIResults.addNameKeys(formatAPIResults.generateListOfObjects(headers, players));
