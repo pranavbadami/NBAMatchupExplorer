@@ -987,7 +987,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
             
             _.each(result, function(play) {
                 //beginning of period
-                
+                    
                     teamOneState = gameStateMachine.evaluateState(play, teamOneState, players);
                     teamTwoState = gameStateMachine.evaluateState(play, teamTwoState, players);
                     play["state"] = [teamOneState,teamTwoState];
@@ -1026,8 +1026,8 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
                 }
                 _.each(periods, function(period) {
                     // console.log("PERIOD", period);
-                    var startRange = (12*60*10)*period + 10;
-                    var endRange = startRange + 250;
+                    var startRange = (12*60*10)*period + 50;
+                    var endRange = startRange + 300;
                     nbaAPI.getBoxAndStats(gameID, startRange, endRange).then(function(result) {
 
                         
