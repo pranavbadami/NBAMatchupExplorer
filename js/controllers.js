@@ -249,21 +249,35 @@ nbaLineupApp.service('lineupStats', function() {
                 else {
                     if (play.HOMEDESCRIPTION) {
                         if (play.HOMEDESCRIPTION.indexOf("MISS") == 0) {
-                            homeAttempted++;
-                            if(play.HOMEDESCRIPTION.indexOf("3PT"))
-                                homeAttemptedThrees++;
+                            if (play.HOMEDESCRIPTION.indexOf("Free Throw") != -1) {
+                                homeAttemptedFreeThrows++;
+                            }
+                            else {
+                                homeAttempted++;
+                                if(play.HOMEDESCRIPTION.indexOf("3PT") != -1) {
+                                    console.log('HOMEDESCRIPTION', play.HOMEDESCRIPTION, 'VISITORDESCRIPTION', play.VISITORDESCRIPTION);
+                                    homeAttemptedThrees++;
+                                }
+                            }   
+                            
                         }
-                        else (play.HOMEDESCRIPTION.indexOf("Free Throw") != -1)
-                            homeAttemptedFreeThrows;
+                        
                     }
                     if (play.VISITORDESCRIPTION) {
                         if (play.VISITORDESCRIPTION.indexOf("MISS") == 0) {
-                            visitorAttempted++;
-                            if(play.VISITORDESCRIPTION.indexOf("3PT"))
-                                visitorAttemptedThrees++;
+                            if (play.VISITORDESCRIPTION.indexOf("Free Throw") != -1) {
+                                visitorAttemptedFreeThrows++;
+                            }
+                            else {
+                                visitorAttempted++;
+                                if(play.VISITORDESCRIPTION.indexOf("3PT") != -1) {
+                                    console.log('HOMEDESCRIPTION', play.HOMEDESCRIPTION, 'VISITORDESCRIPTION', play.VISITORDESCRIPTION);
+                                    visitorAttemptedThrees++;
+                                }
+                            }
+                                
                         }
-                        else (play.VISITORDESCRIPTION.indexOf("Free Throw") != -1)
-                            visitorAttemptedFreeThrows;
+                            
                     }
                 }
             });
