@@ -255,7 +255,6 @@ nbaLineupApp.service('lineupStats', function() {
                             else {
                                 homeAttempted++;
                                 if(play.HOMEDESCRIPTION.indexOf("3PT") != -1) {
-                                    console.log('HOMEDESCRIPTION', play.HOMEDESCRIPTION, 'VISITORDESCRIPTION', play.VISITORDESCRIPTION);
                                     homeAttemptedThrees++;
                                 }
                             }   
@@ -271,7 +270,6 @@ nbaLineupApp.service('lineupStats', function() {
                             else {
                                 visitorAttempted++;
                                 if(play.VISITORDESCRIPTION.indexOf("3PT") != -1) {
-                                    console.log('HOMEDESCRIPTION', play.HOMEDESCRIPTION, 'VISITORDESCRIPTION', play.VISITORDESCRIPTION);
                                     visitorAttemptedThrees++;
                                 }
                             }
@@ -627,7 +625,6 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
                     obj["VISITOR_TEAM_ABBREV"] = awayTeam.abbrev;
                     return obj;
                 });
-                console.log(boxscoreObjects, response.data.resultSets[1].rowSet[0], response.data.resultSets[1].rowSet[1]);
                 if (boxscoreObjects[0].HOME_TEAM_ID == response.data.resultSets[1].rowSet[0][3]) {
                     boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][21]
                     boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][21]
