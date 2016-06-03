@@ -32,6 +32,7 @@ nbaLineupApp.service('formatAPIResults', function() {
 
         addNameKeys: function(eligiblePlayerObjects) {
             eligiblePlayerObjects = _.map(eligiblePlayerObjects, function(playerObject) {
+                console.log("playerObject", playerObject)
                 var nameComponents = playerObject.PLAYER_NAME.split(" ");
                     playerObject.firstName = nameComponents[0];
                     playerObject.lastName = "";
@@ -598,10 +599,35 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             return promise;
         },
 
-        getBoxAndStats: function(gameID,startRange,endRange) {
+        getBoxSummary: function(gameID) {
+            var gameBoxScoreSummary = "http://stats.nba.com/stats/boxscoresummaryv2"
+            var requiredParams = {
+                "GameID":gameID,
+                "callback": "JSON_CALLBACK"
+            }
+            var promise = $http.jsonp(gameBoxScoreSummary, {"params": requiredParams}).then(function(summ) {
+                var headers = summ.data.resultSets[0].headers;
+                var boxscore = summ.data.resultSets[0].rowSet;
+                var boxscoreObjects = _.map(formatAPIResults.generateListOfObjects(headers, boxscore), function(obj) {
+                    console.log("object", obj)
+                    obj["DATE"] = formatAPIResults.timeStamp(obj.GAME_DATE_EST)
+                    var homeTeam = getterService.getTeam(obj.HOME_TEAM_ID);
+                    var awayTeam = getterService.getTeam(obj.VISITOR_TEAM_ID);
+                    obj["HOME_TEAM_NAME"] = homeTeam.teamName;
+                    obj["VISITOR_TEAM_NAME"] = awayTeam.teamName;
+                    obj["HOME_TEAM_ABBREV"] = homeTeam.abbrev;
+                    obj["VISITOR_TEAM_ABBREV"] = awayTeam.abbrev;
+                    return obj;
+                });
+                return boxscoreObjects;
+            })
+            return promise
+        },
+
+        getBoxAndStats: function(gameID,startRange,endRange, summary) {
             if (typeof(startRange)==='undefined') startRange = 0;
             if (typeof(endRange)==='undefined') endRange = 55800; 
-            var gameBoxScoreUrl = "http://stats.nba.com/stats/boxscore"
+            var gameBoxScoreUrl = "http://stats.nba.com/stats/boxscoretraditionalv2"
             var requiredParams = {
                 "GameID":gameID,
                 "StartPeriod":"1",
@@ -613,32 +639,29 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             }
 
             var promise = $http.jsonp(gameBoxScoreUrl,{ "params": requiredParams}).then(function(response) {
-                var headers = response.data.resultSets[0].headers;
-                var boxscore = response.data.resultSets[0].rowSet;
-                var boxscoreObjects = _.map(formatAPIResults.generateListOfObjects(headers, boxscore), function(obj) {
-                    obj["DATE"] = formatAPIResults.timeStamp(obj.GAME_DATE_EST)
-                    var homeTeam = getterService.getTeam(obj.HOME_TEAM_ID);
-                    var awayTeam = getterService.getTeam(obj.VISITOR_TEAM_ID);
-                    obj["HOME_TEAM_NAME"] = homeTeam.teamName;
-                    obj["VISITOR_TEAM_NAME"] = awayTeam.teamName;
-                    obj["HOME_TEAM_ABBREV"] = homeTeam.abbrev;
-                    obj["VISITOR_TEAM_ABBREV"] = awayTeam.abbrev;
-                    return obj;
-                });
-                if (boxscoreObjects[0].HOME_TEAM_ID == response.data.resultSets[1].rowSet[0][3]) {
-                    boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][21]
-                    boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][21]
-                }
-                else {
-                    boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][21]
-                    boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][21]
+                var boxscoreObjects = summary
+                
+                console.log('responseData', response.data.resultSets[1]);
+                if (summary) {
+                    if (boxscoreObjects[0].HOME_TEAM_ID == response.data.resultSets[1].rowSet[0][1]) {
+                        boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][23]
+                        boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][23]
+                    }
+                    else {
+                        boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[1][23]
+                        boxscoreObjects[0]["VISITOR_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][23]
+                    }
                 }
                 
-                headers = response.data.resultSets[4].headers;
-                var players = response.data.resultSets[4].rowSet;
-                var playerObjects = formatAPIResults.addNameKeys(formatAPIResults.generateListOfObjects(headers, players));
+                var playerHeaders = response.data.resultSets[0].headers;
+                var players = response.data.resultSets[0].rowSet;
+                var playerObjects = formatAPIResults.addNameKeys(formatAPIResults.generateListOfObjects(playerHeaders, players));
+                console.log("playerObjects", playerObjects);
 
+                    
+                
                 return [boxscoreObjects, playerObjects];
+                
             })
             return promise;
         },
@@ -1013,33 +1036,37 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
         _.each(games, function(gameID) {
             $scope.playByPlays[gameID] = {'state':{}, 'players': []};
             // console.log('gameID', gameID)
-            nbaAPI.getBoxAndStats(gameID).then(function(result) {
-                var players = result[1];
-                $scope.boxScores[gameID] = result[0][0];
-                $scope.playByPlays[gameID]['players'][0] = _.filter(players, function(player) {return player.TEAM_ID == teamData.teams[0].id})
-                $scope.playByPlays[gameID]['players'][1] = _.filter(players, function(player) {return player.TEAM_ID == teamData.teams[1].id})
-                var totalPeriods = $scope.boxScores[gameID].LIVE_PERIOD;
-                $scope.totalPeriods += totalPeriods; 
-                var periods = [];
-                for (var i = 0; i < totalPeriods; i++) { 
-                    periods[i] = i;
-                }
-                _.each(periods, function(period) {
-                    // console.log("PERIOD", period);
-                    var startRange = (12*60*10)*period + 50;
-                    var endRange = startRange + 300;
-                    nbaAPI.getBoxAndStats(gameID, startRange, endRange).then(function(result) {
+            nbaAPI.getBoxSummary(gameID).then(function(summary) {
+                nbaAPI.getBoxAndStats(gameID, undefined, undefined, summary).then(function(result) {
+                    console.log('result', result)
+                    var players = result[1];
+                    $scope.boxScores[gameID] = result[0][0];
+                    $scope.playByPlays[gameID]['players'][0] = _.filter(players, function(player) {return player.TEAM_ID == teamData.teams[0].id})
+                    $scope.playByPlays[gameID]['players'][1] = _.filter(players, function(player) {return player.TEAM_ID == teamData.teams[1].id})
+                    var totalPeriods = $scope.boxScores[gameID].LIVE_PERIOD;
+                    $scope.totalPeriods += totalPeriods; 
+                    var periods = [];
+                    for (var i = 0; i < totalPeriods; i++) { 
+                        periods[i] = i;
+                    }
+                    _.each(periods, function(period) {
+                        // console.log("PERIOD", period);
+                        var startRange = (12*60*10)*period + 50;
+                        var endRange = startRange + 300;
+                        nbaAPI.getBoxAndStats(gameID, startRange, endRange, undefined).then(function(result) {
 
-                        
-                        var periodStartState = {'teamOneState': gameStateMachine.getStartState(teamData.teams[0].id, result[1]),
-                                               'teamTwoState': gameStateMachine.getStartState(teamData.teams[1].id, result[1])
-                                                }
-                        // console.log("result in getBox", result, gameID, startRange, endRange, periodStartState)
-                        getPlayByPlay(gameID, period+1, periodStartState, totalPeriods, players);
+                            
+                            var periodStartState = {'teamOneState': gameStateMachine.getStartState(teamData.teams[0].id, result[1]),
+                                                   'teamTwoState': gameStateMachine.getStartState(teamData.teams[1].id, result[1])
+                                                    }
+                            // console.log("result in getBox", result, gameID, startRange, endRange, periodStartState)
+                            getPlayByPlay(gameID, period+1, periodStartState, totalPeriods, players);
+                        })
                     })
+                    
                 })
-                
-            })
+            }) 
+            
         })
     }
 
