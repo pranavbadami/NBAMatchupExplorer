@@ -32,7 +32,7 @@ nbaLineupApp.service('formatAPIResults', function() {
 
         addNameKeys: function(eligiblePlayerObjects) {
             eligiblePlayerObjects = _.map(eligiblePlayerObjects, function(playerObject) {
-                console.log("playerObject", playerObject)
+                // console.log("playerObject", playerObject)
                 var nameComponents = playerObject.PLAYER_NAME.split(" ");
                     playerObject.firstName = nameComponents[0];
                     playerObject.lastName = "";
@@ -609,7 +609,7 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
                 var headers = summ.data.resultSets[0].headers;
                 var boxscore = summ.data.resultSets[0].rowSet;
                 var boxscoreObjects = _.map(formatAPIResults.generateListOfObjects(headers, boxscore), function(obj) {
-                    console.log("object", obj)
+                    // console.log("object", obj)
                     obj["DATE"] = formatAPIResults.timeStamp(obj.GAME_DATE_EST)
                     var homeTeam = getterService.getTeam(obj.HOME_TEAM_ID);
                     var awayTeam = getterService.getTeam(obj.VISITOR_TEAM_ID);
@@ -641,7 +641,7 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
             var promise = $http.jsonp(gameBoxScoreUrl,{ "params": requiredParams}).then(function(response) {
                 var boxscoreObjects = summary
                 
-                console.log('responseData', response.data.resultSets[1]);
+                // console.log('responseData', response.data.resultSets[1]);
                 if (summary) {
                     if (boxscoreObjects[0].HOME_TEAM_ID == response.data.resultSets[1].rowSet[0][1]) {
                         boxscoreObjects[0]["HOME_TEAM_SCORE"] = response.data.resultSets[1].rowSet[0][23]
@@ -656,7 +656,7 @@ nbaLineupApp.service('nbaAPI', function($http, formatAPIResults){
                 var playerHeaders = response.data.resultSets[0].headers;
                 var players = response.data.resultSets[0].rowSet;
                 var playerObjects = formatAPIResults.addNameKeys(formatAPIResults.generateListOfObjects(playerHeaders, players));
-                console.log("playerObjects", playerObjects);
+                // console.log("playerObjects", playerObjects);
 
                     
                 
@@ -1038,7 +1038,7 @@ nbaLineupApp.controller('lineupController', function ($scope, nbaAPI, $modal, $r
             // console.log('gameID', gameID)
             nbaAPI.getBoxSummary(gameID).then(function(summary) {
                 nbaAPI.getBoxAndStats(gameID, undefined, undefined, summary).then(function(result) {
-                    console.log('result', result)
+                    // console.log('result', result)
                     var players = result[1];
                     $scope.boxScores[gameID] = result[0][0];
                     $scope.playByPlays[gameID]['players'][0] = _.filter(players, function(player) {return player.TEAM_ID == teamData.teams[0].id})
